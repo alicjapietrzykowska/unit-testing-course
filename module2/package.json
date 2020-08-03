@@ -1,0 +1,19 @@
+{
+  "name": "module2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "vatCalculator.js",
+  "dependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.3",
+    "jest": "^26.2.2"
+  },
+  "devDependencies": {
+    "uuid": "^8.3.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
