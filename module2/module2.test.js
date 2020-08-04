@@ -1,19 +1,33 @@
-const VatService = require("./vatCalculator");
+const VatService = require("./vatService");
 const Product = require('./product');
+const VatProvider = require('./vatProvider');
+
+jest.mock('./vatProvider', () => {
+    return jest.fn().mockImplementation(() => {
+        return {
+            getDefaultVat: jest.fn(),
+            getVatForType: jest.fn()
+        }
+    })
+});
+
 const { v4: uuidv4 } = require('uuid');
 
-const generateProductWithPrice = (netPrice) => {
-    return new Product(uuidv4(), netPrice);
+const generateProductWithPrice = (netPrice, type) => {
+    return new Product(uuidv4(), netPrice, type);
 }
 
 describe('vatCalculator class tests', () => {
     
     beforeEach(() => {
-        vatService = new VatService();
+        VatProvider.mockClear();
+        vatProvider = new VatProvider();
+        vatService = new VatService(vatProvider);
     });
 
     test('should calculate gross price for default VAT', () => {
-        const product = generateProductWithPrice(20);
+        vatProvider.getDefaultVat.mockImplementation(() => 0.23);
+        const product = generateProductWithPrice(20, 'food');
         const result = vatService.getGrossPriceForDefaultVat(product);
         expect(result).toEqual(24.6);
     });
@@ -21,45 +35,48 @@ describe('vatCalculator class tests', () => {
     test('should throw an error when no product given to function with default VAT value', () => {
         expect(() => {
             vatService.getGrossPriceForDefaultVat(null)
-                .toThrow(new Error('No product given'))
+                .toThrowError('No product given')
         });
     });
 
     test('should calculate gross price for other VAT value', () => {
-        const product = generateProductWithPrice(10);
-        const result = vatService.getGrossPrice(product.getNetPrice(), 0.08);
+        vatProvider.getVatForType.mockImplementation(() => 0.08);
+        const product = generateProductWithPrice(10, 'clothes');
+        const result = vatService.getGrossPrice(product.getNetPrice(), product.getProductType());
         expect(result).toEqual(10.8);
     });
     
 
-    test('should throw an error when no net price value given', () => {
-        const product = generateProductWithPrice(10);
+    test('should throw an error when no netto price value given', () => {
+        const product = generateProductWithPrice(10, 'food');
         expect(() => {
-            vatService.getGrossPrice(null, 0.23)
-                .toThrow(new Error('No net price value given'))
+            vatService.getGrossPrice(null, 'food')
+                .toThrowError('No product price given')
         });
     });
-    test('should throw an error when no VAT value given', () => {
-        const product = generateProductWithPrice(10);
+    test('should throw an error when no product type given', () => {
+        const product = generateProductWithPrice(10, 'cats');
         expect(() => {
             vatService.getGrossPrice(product.getNetPrice(), null)
-                .toThrow(new Error('No VAT value given'))
+                .toThrowError('No product type given')
         });
     });
 
     test('should throw an error when VAT value is too high', () => {
-        const product = generateProductWithPrice(10);
+        const product = generateProductWithPrice(10, 'games');
+        vatProvider.getVatForType.mockImplementation(() => 1.2);
         expect(() => {
-            vatService.getGrossPrice(product.getNetPrice(), 1.2)
-                .toThrow(new Error('VAT value is too high'))
+            vatService.getGrossPrice(product.getNetPrice(), product.getProductType())
+                .toThrowError('VAT value is too high')
         });
     });
 
     test('should throw an error when VAT value is too low', () => {
-        const product = generateProductWithPrice(10);
+        vatProvider.getVatForType.mockImplementation(() => -1);
+        const product = generateProductWithPrice(10, 'fruits');
         expect(() => {
-            vatService.getGrossPrice(product.getNetPrice(), -1)
-                .toThrow(new Error('VAT value is too low'))
+            vatService.getGrossPrice(product.getNetPrice(), product.getProductType())
+                .toThrowError('VAT value is too low')
         });
     });
 
@@ -67,21 +84,26 @@ describe('vatCalculator class tests', () => {
 
 describe('Product class tests', () => {
 
-    test('should return net price', () => {
-        const product = new Product(uuidv4(), 20);
+    test('should return netto price', () => {
+        const product = new Product(uuidv4(), 20, 'chocolates');
         const result = product.getNetPrice();
         expect(result).toEqual(20);
     });
 
     test('should throw an error when no product id given', () => {
         expect(() => {
-            new Product(null, 20).toThrow(new Error('No id given'))
+            new Product(null, 20, 'drinks').toThrowError('No id given')
         });
     });
 
-    test('should throw an error when no product net price given', () => {
+    test('should throw an error when no product netto price given', () => {
         expect(() => {
-            new Product(uuidv4(), null).toThrow(new Error('No net price given'))
+            new Product(uuidv4(), null, 'books').toThrowError('No product price given')
+        });
+    });
+    test('should throw an error when no product type given', () => {
+        expect(() => {
+            new Product(uuidv4(), 20, null).toThrowError('No product type given')
         });
     });
 });
