@@ -32,14 +32,14 @@ describe('vatCalculator class tests', () => {
         expect(result).toEqual(24.6);
     });
 
-    test('should throw an error when no product given to function with default VAT value', () => {
+    test('should throw an error when no product given to calculate default VAT value', () => {
         expect(() => {
             vatService.getGrossPriceForDefaultVat(null)
                 .toThrowError('No product given')
         });
     });
 
-    test('should calculate gross price for other VAT value', () => {
+    test('should calculate gross price for custom VAT value', () => {
         vatProvider.getVatForType.mockImplementation(() => 0.08);
         const product = generateProductWithPrice(10, 'clothes');
         const result = vatService.getGrossPrice(product.getNetPrice(), product.getProductType());
@@ -54,6 +54,7 @@ describe('vatCalculator class tests', () => {
                 .toThrowError('No product price given')
         });
     });
+
     test('should throw an error when no product type given', () => {
         const product = generateProductWithPrice(10, 'cats');
         expect(() => {
@@ -90,6 +91,12 @@ describe('Product class tests', () => {
         expect(result).toEqual(20);
     });
 
+    test('should return product type', () => {
+        const product = new Product(uuidv4(), 20, 'chocolates');
+        const result = product.getProductType();
+        expect(result).toEqual('chocolates');
+    });
+
     test('should throw an error when no product id given', () => {
         expect(() => {
             new Product(null, 20, 'drinks').toThrowError('No id given')
@@ -101,6 +108,7 @@ describe('Product class tests', () => {
             new Product(uuidv4(), null, 'books').toThrowError('No product price given')
         });
     });
+    
     test('should throw an error when no product type given', () => {
         expect(() => {
             new Product(uuidv4(), 20, null).toThrowError('No product type given')

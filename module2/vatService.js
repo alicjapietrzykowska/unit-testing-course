@@ -1,5 +1,3 @@
-const Product = require('./product');
-
 class VatService {
     
     constructor(vatProvider) {
